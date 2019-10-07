@@ -1,0 +1,98 @@
+package sample;
+
+import sun.plugin2.message.Message;
+import twitter4j.*;
+import twitter4j.auth.AccessToken;
+
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.sql.Struct;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
+public class Main  {
+
+    public static void main(String[] args) {
+        try {
+            getTwitts();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    private static void getTwitts() throws TwitterException {
+
+        Twitter twitter = new TwitterFactory().getInstance();
+
+        AccessToken accessToken = new AccessToken("1180902893580406785-ki9M01kdyHZxizd8vYorQW6BtcQPV0", "MYgGRKj9DRu1fvIVDlMoiaXgL7JuvxwDJw40NrPdozWWD");
+        twitter.setOAuthConsumer("oR66gf8eHPuO2ETvanOErutmR", "1QLn7yqA5scZUKvvEMGZu71ZpA593rxYRLoCGt70fkaEMYPHue");
+        twitter.setOAuthAccessToken(accessToken);
+        Query query = new Query("#UCL");
+        QueryResult result;
+        int Count = 0;
+        do {
+            result = twitter.search(query);
+            List<Status> tweets = result.getTweets();
+            for (Status tweet : tweets) {
+                System.out.println(tweet.getUser().getId()+" @" + tweet.getUser().getScreenName() + ":" + tweet.getText()+" "+tweet.getCreatedAt()+" "+tweet.getPlace());
+                saveTwitt(tweet.getUser().getId(),tweet.getUser().getScreenName(),tweet.getText(),tweet.getCreatedAt());
+                Count++;
+            }
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        while ((query = result.nextQuery()) != null);
+        System.out.println(Count);
+        System.exit(0);
+    }
+
+    private static void saveTwitt(long twitterID, String user, String message, Date date){
+        int idLenght = String.valueOf(twitterID).length();
+        int userLenght = user.length();
+        int messageLenght = message.length();
+        StringBuilder validTwitterID = new StringBuilder();
+        StringBuilder validUser = new StringBuilder();
+        StringBuilder validMessage = new StringBuilder();
+        String pattern = "dd-MM-yyyy";
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
+        String validDate = simpleDateFormat.format(date);
+
+        for (int i = 0;i <= 20 - idLenght;i++){
+            validTwitterID.append("0");
+        }
+
+        for (int i = 0;i <= 20 - userLenght;i++){
+            validUser.append(" ");
+        }
+
+        for (int i = 0;i <= 280 - messageLenght;i++){
+            validMessage.append(" ");
+        }
+
+        validTwitterID.append(twitterID);
+        validUser.append(user);
+        validMessage.append(message);
+
+        try(FileWriter fw = new FileWriter("myfile.txt", true);
+            BufferedWriter bw = new BufferedWriter(fw);
+            PrintWriter out = new PrintWriter(bw))
+        {
+            out.println(validTwitterID.toString()+validUser.toString()+validMessage.toString()+validDate);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+/*
+id_twitter ((caractere de 20 posições),
+usuário (caractere de 20 posições),
+mensagem (caractere de 280 posições),
+data (caractere de 8 posições),
+*/
